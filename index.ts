@@ -1,135 +1,68 @@
 import express from 'express'
+import database from 'better-sqlite3'
 
 const cors = require('cors')
+const db = database('./db/setup.db', { verbose: console.log })
 
 const app = express()
 app.use(express.json())
 const port = 4000
-const quotes = [
-    {
-        id:0,
-     quote: "Genius is one percent inspiration and ninety-nine percent perspiration.",
-     
-    author:{
-        name:"Thomas ",
-        surname:"Edison",
-        photo:'url'
-    } 
-    },
-    {
-        id:1,
-     quote:  "You can observe a lot just by watching.",
-     
-    author:{
-        name: "Yogi ",
-        surname: "Berra",
-        photo:'url'
-    }
-    },
-    {
-        id:2,
-     quote: "A house divided against itself cannot stand.",
-     
-    author:{
-        name:"Abraham ",
-        surname:"Lincoln",
-        photo:'url'
-    }
-    },
-    {
-        id:3,
-     quote: "Fate is in your hands and no one elses",
-     
-    author:{
-        name:"Byron ",
-        surname:"Pulsifer",
-        photo:'url'
-    } 
-    },
-    {
-        id:4,
-     quote: "Nothing happens unless first we dream.",
-     
-    author:{
-        name:"Carl ",
-        surname:"Sandburg",
-        photo:'url'
-    } 
-    },
-    {
-        id:5,
-     quote:  "Be the chief but never the lord.",
-     
-     
-    author:{
-        name:"Lao ",
-        surname:"Tzu",
-        photo:'url'
-    } 
-    },
-    {
-        id:6,
-     quote: "Well begun is half done.",
-     
-    author:{
-        name:"Aristotle",
-        surname:"",
-        photo:'url'
-    } 
-    },
-    {
-        id:7,
-     quote: "Life is a learning experience, only if you learn.",
-     
-    author:{
-        name:"Yogi ",
-        surname:"Berra",
-        photo:'url'
-    } 
-    },
-    {
-        id:8,
-     quote: "What you give is what you get.",
-     
-    author:{
-        name:"Byron ",
-        surname:"Pulsifer",
-        photo:'url'
-    } 
-    },
-    
 
-]
+const getQuotes = db.prepare(`
+    SELECT * FROM quotes;
+`)
 
-const randomQuote= quotes[Math.floor(Math.random() * quotes.length)]
+const getQuotewithId = db.prepare(`
+    SELECT * FROM quotes WHERE id = ?;
+`)
+const updateQuote = db.prepare(`
+    UPDATE quotes SET quote = ?,author = ? WHERE id = ?;
+`)
+
+const createQuote = db.prepare(`
+    INSERT INTO quotes ( quote, author) VALUES (?, ?);
+`)
+
+const deleteQuote = db.prepare(`
+    DELETE FROM quotes WHERE id = ?;
+`)
+
+
+
+
 
 app.get('/quotes', cors(),(req, res) => {
+    const quotes = getQuotes.all()
   res.send(quotes)
 })
+app.get('/', cors(),(req, res) => {
+    res.send("Go to /quotes to find the data u want :)")
+  })
 app.get('/random', cors(),(req, res) => {
+    const quotes = getQuotes.all()
     res.send(quotes[Math.floor(Math.random() * quotes.length)])
   })
 
-  app.post('/quotes',cors() ,(req, res) => {
-  console.log(req.body)
-  let newitem = {
-    id:quotes[quotes.length - 1].id+1,
-    quote:req.body.quote,
-    author:{
-        name:req.body.author.name,
-        surname:req.body.author.surname,
-        photo:req.body.author.photo
-    }
-  }
-  quotes.push(newitem)
-  res.send(newitem)
+//   app.post('/quotes',cors() ,(req, res) => {
+//   console.log(req.body)
+//   let newitem = {
+//     id:quotes[quotes.length - 1].id+1,
+//     quote:req.body.quote,
+//     author:{
+//         name:req.body.author.name,
+//         surname:req.body.author.surname,
+//         photo:req.body.author.photo
+//     }
+//   }
+//   quotes.push(newitem)
+//   res.send(newitem)
    
-})
+// })
 app.get('/quotes/:id', function (req, res) {
     let id = Number(req.params.id)
-    let match = quotes.find(quote => quote.id === id)
-    if(match){
-        res.send(match);
+    const quote = getQuotewithId.get(id)
+    if(quote){
+        res.send(quote);
     }else{
         res.status(404).send({ error: 'Quote not found.' })
         res.send("DataNot Found")
